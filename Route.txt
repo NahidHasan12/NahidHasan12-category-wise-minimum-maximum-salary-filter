@@ -1,0 +1,1 @@
+Route::get('vacature_min_max_salary', [JobPostController::class, 'vacatureMinMaxSalary'])->name('jobposts.vacatureMinMaxSalary');

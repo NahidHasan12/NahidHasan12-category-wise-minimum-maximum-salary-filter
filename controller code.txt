@@ -1,0 +1,30 @@
+ public function vacatureMinMaxSalary(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'category_name' => 'nullable|string|max:255',
+            ]);
+
+            $categoryName = $validated['category_name'] ?? null;
+            $salaryRanges = JobPost::select(
+                'job_categories.category_name',
+                JobPost::raw('MIN(job_posts.minimum_salary) as min_salary'),
+                JobPost::raw('MAX(job_posts.maximum_salary) as max_salary')
+            )
+            ->join('job_categories', 'job_posts.category_id', '=', 'job_categories.id')
+            ->where('job_posts.DataMode', 'Active')
+            ->where(function ($query) {
+                $query->where('job_posts.minimum_salary', '>', 0)
+                    ->orWhere('job_posts.maximum_salary', '>', 0);
+            })
+            ->when($categoryName, function ($query, $categoryName) {
+                $query->where('job_categories.category_name', 'LIKE', "%$categoryName%");
+            })
+            ->groupBy('job_categories.category_name')
+            ->first();
+
+            return $this->HandleSuccessResponse('Salary ranges retrieved successfully by category', $salaryRanges);
+        } catch (\Exception $e) {
+            return $this->HandleException("Failed to retrieve salary ranges by category", $e);
+        }
+    }
